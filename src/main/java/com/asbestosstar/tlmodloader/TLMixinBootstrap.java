@@ -12,6 +12,8 @@ import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 
+import com.llamalad7.mixinextras.MixinExtrasBootstrap;
+
 import net.fabricmc.loader.impl.lib.accesswidener.AccessWidener;
 import net.fabricmc.loader.impl.lib.accesswidener.AccessWidenerClassVisitor;
 import net.fabricmc.loader.impl.lib.accesswidener.AccessWidenerReader;
@@ -33,12 +35,12 @@ public class TLMixinBootstrap {
 				if (is != null) {
 					AccessWidenerReader reader = new AccessWidenerReader(ACCESS_WIDENER);
 					reader.read(is.readAllBytes()); // fixed
-					System.out.println("[TLLoader] Applied Access Widener: " + awPath);
+					System.out.println("[TLModLoader] Applied Access Widener: " + awPath);
 				} else {
-					System.err.println("[TLLoader] Could not find Access Widener: " + awPath);
+					System.err.println("[TModLLoader] Could not find Access Widener: " + awPath);
 				}
 			} catch (Exception e) {
-				System.err.println("[TLLoader] Failed to read Access Widener: " + awPath);
+				System.err.println("[TModLLoader] Failed to read Access Widener: " + awPath);
 				e.printStackTrace();
 			}
 		}
@@ -51,10 +53,10 @@ public class TLMixinBootstrap {
 
 			if (instance instanceof ICoremodTransformer) {
 				COREMODS.add((ICoremodTransformer) instance);
-				System.out.println("[TLLoader] Registered ICoremodTransformer: " + className);
+				System.out.println("[TLModLoader] Registered ICoremodTransformer: " + className);
 			}
 		} catch (Exception e) {
-			System.err.println("[TLLoader] Failed to load coremod: " + className);
+			System.err.println("[TLModLoader] Failed to load coremod: " + className);
 			e.printStackTrace();
 		}
 	}
@@ -86,7 +88,7 @@ public class TLMixinBootstrap {
 
 			if (classBytes == null) {
 				throw new RuntimeException(
-						"[TLLoader] Coremod " + transformer.getClass().getName() + " returned null for " + name);
+						"[TLModLoader] Coremod " + transformer.getClass().getName() + " returned null for " + name);
 			}
 		}
 
@@ -98,6 +100,10 @@ public class TLMixinBootstrap {
 		System.setProperty("mixin.service", TLMixinService.class.getName());
 
 		MixinBootstrap.init();
+
+		// Must be early, before mixin configs are applied
+		MixinExtrasBootstrap.init();
+
 		gotoMixinDefaultPhaseReflective();
 	}
 
@@ -107,7 +113,7 @@ public class TLMixinBootstrap {
 			m.setAccessible(true);
 			m.invoke(null, MixinEnvironment.Phase.DEFAULT);
 		} catch (Exception e) {
-			throw new RuntimeException("[TLLoader] Failed to switch Mixin phase", e);
+			throw new RuntimeException("[TLModLoader] Failed to switch Mixin phase", e);
 		}
 	}
 

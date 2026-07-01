@@ -7,29 +7,21 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
-configurations {
-    mixinShade
-}
-
 loom {
     accessWidenerPath = file("src/main/resources/tlauncher.accesswidener")
-    
-    //runs.configureEach {
-    //    enabled = false
-  //  }
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url 'https://maven.fabricmc.net/' }
     maven { url 'https://jitpack.io' }
-    
-    // TLauncher uses a flat-directory layout over HTTP, not a standard Maven structure.
+
     def tlauncherRepos = [
-        "https://repo.tlauncher.org/tlauncher-sources/prod/release/tlauncher/",
-        "https://repo.fastrepo.org/tlauncher-sources/prod/release/tlauncher/",
-        "https://advancedrepository.net/tlauncher-sources/prod/release/tlauncher/",
-        "https://repo.tlauncher.ru/tlauncher-sources/prod/release/tlauncher/"
+            "https://repo.tlauncher.org/tlauncher-sources/prod/release/tlauncher/",
+            "https://repo.fastrepo.org/tlauncher-sources/prod/release/tlauncher/",
+            "https://advancedrepository.net/tlauncher-sources/prod/release/tlauncher/",
+            "https://repo.tlauncher.ru/tlauncher-sources/prod/release/tlauncher/"
     ]
 
     tlauncherRepos.each { repoUrl ->
@@ -37,7 +29,6 @@ repositories {
             url = repoUrl
             patternLayout {
                 artifact "2.9369/dependencies/[artifact].[ext]"
-                // Added pattern for the main TLauncher jar which sits outside the dependencies folder
                 artifact "2.9369/[artifact].[ext]"
             }
             metadataSources {
@@ -47,13 +38,29 @@ repositories {
     }
 }
 
+configurations {
+    tlauncherSourceInput
+    vineflower
+}
 
 dependencies {
-    // Dummy MC dependency for Fabric Loom initialization (Using your project version)
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    
+
     implementation group: 'tlauncher', name: 'original-TLauncher-2.9369', version: '2.9369'
+
+    tlauncherSourceInput group: 'tlauncher', name: 'original-TLauncher-2.9369', version: '2.9369'
+    vineflower "org.vineflower:vineflower:1.11.1"
+
+// Source: https://mvnrepository.com/artifact/net.fabricmc/sponge-mixin
+implementation("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
+
+    // Normal deps, not bundled/shaded.
+// Source: https://mvnrepository.com/artifact/com.github.LlamaLad7/MixinExtras
+implementation("com.github.LlamaLad7:MixinExtras:0.2.2")
+
+// Source: https://mvnrepository.com/artifact/net.fabricmc/access-widener
+implementation("net.fabricmc:access-widener:2.1.0")
 
     // TLauncher Dependencies
     implementation group: 'dependencies', name: 'annotations-2.40.4', version: '2.9369'
@@ -155,40 +162,18 @@ dependencies {
     implementation group: 'dependencies', name: 'utils-2.40.4', version: '2.9369'
     implementation group: 'dependencies', name: 'utils-lite-2.40.4', version: '2.9369'
     implementation group: 'dependencies', name: 'xz-1.9', version: '2.9369'
-
-    // Bundle Mixin directly into the wrapper jar
-    mixinShade("org.spongepowered:mixin:0.15.0") { transitive = false }
-    mixinShade("com.github.llamalad7:mixinextras:0.4.1") { transitive = false }
-    mixinShade("net.fabricmc:access-widener:2.1.1") { transitive = false }
-
 }
 
-//tasks.remapJar {
- //   enabled = false
-//}
 
-//tasks.remapSourcesJar {
- //   enabled = false
-//}
 
 jar {
     from sourceSets.main.output
-    from({
-        configurations.mixinShade.collect { 
-            it.isDirectory() ? it : zipTree(it) 
-        }
-    }) {
-        exclude 'META-INF/maven/**'
-        exclude 'META-INF/*.SF'
-        exclude 'META-INF/*.DSA'
-        exclude 'META-INF/*.RSA'
-    }
-    
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    
+
     manifest {
         attributes(
-            'Main-Class': "${project.group}.LaunchWrapper"
+                'Main-Class': 'com.asbestosstar.tlmodloader.installer.TLModLoaderInstaller'
         )
     }
 }
@@ -204,8 +189,75 @@ tasks.withType(JavaCompile).configureEach {
     it.options.release = 17
 }
 
+
+tasks.register("decompileTLauncherSources", JavaExec) {
+    group = "fabric"
+    description = "Decompiles original TLauncher jar with Vineflower."
+
+    def m2Dir = new File(
+            System.getProperty("user.home"),
+            ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369"
+    )
+
+    def sourcesJar = new File(m2Dir, "original-TLauncher-2.9369-2.9369-sources.jar")
+
+    classpath = configurations.vineflower
+    mainClass.set("org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler")
+
+    doFirst {
+        m2Dir.mkdirs()
+
+        def inputJar = configurations.tlauncherSourceInput.singleFile
+
+        args(
+                "-dgs=1",
+                "-asc=1",
+                "-rsy=1",
+                inputJar.absolutePath,
+                sourcesJar.absolutePath
+        )
+    }
+}
+tasks.register("installTLauncherJarToMavenLocal") {
+    group = "fabric"
+
+    doLast {
+        def m2Dir = new File(
+                System.getProperty("user.home"),
+                ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369"
+        )
+
+        def inputJar = configurations.tlauncherSourceInput.singleFile
+
+        m2Dir.mkdirs()
+
+        copy {
+            from inputJar
+            into m2Dir
+            rename { "original-TLauncher-2.9369-2.9369.jar" }
+        }
+
+        new File(m2Dir, "original-TLauncher-2.9369-2.9369.pom").text = """<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>tlauncher</groupId>
+  <artifactId>original-TLauncher-2.9369</artifactId>
+  <version>2.9369</version>
+</project>
+"""
+    }
+}
+
+tasks.register("installTLauncherToMavenLocal") {
+    group = "fabric"
+    dependsOn "installTLauncherJarToMavenLocal"
+    dependsOn "decompileTLauncherSources"
+}
+
+
+
+
+
 java {
-    withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 }
@@ -216,6 +268,7 @@ publishing {
             from components.java
         }
     }
+
     repositories {
         // Add your release repositories here
     }

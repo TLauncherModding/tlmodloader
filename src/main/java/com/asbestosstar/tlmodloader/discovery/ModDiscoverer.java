@@ -40,7 +40,7 @@ public class ModDiscoverer {
 					mods.add(container);
 				}
 			} catch (Exception e) {
-				System.err.println("[TLLoader] Failed to load mod: " + modJar.getName());
+				System.err.println("[TLModLoader] Failed to load mod: " + modJar.getName());
 				e.printStackTrace();
 			}
 		}
@@ -162,7 +162,7 @@ public class ModDiscoverer {
 				listFilesRecursive(parentDir, requiredSuffix, container);
 			}
 		} else {
-			System.err.println("[TLLoader] Wildcard dependency directory does not exist: " + path);
+			System.err.println("[TLModLoader] Wildcard dependency directory does not exist: " + path);
 		}
 	}
 
@@ -190,12 +190,12 @@ public class ModDiscoverer {
 		if (file.exists()) {
 			try {
 				container.addClasspathUrl(file.toURI().toURL());
-				System.out.println("[TLLoader] Resolved dependency: " + file.getAbsolutePath());
+				System.out.println("[TLModLoader] Resolved dependency: " + file.getAbsolutePath());
 			} catch (Exception e) {
-				System.err.println("[TLLoader] Failed to add dependency: " + file.getAbsolutePath());
+				System.err.println("[TLModLoader] Failed to add dependency: " + file.getAbsolutePath());
 			}
 		} else {
-			System.err.println("[TLLoader] Dependency not found: " + file.getAbsolutePath());
+			System.err.println("[TLModLoader] Dependency not found: " + file.getAbsolutePath());
 		}
 	}
 
@@ -213,7 +213,7 @@ public class ModDiscoverer {
 		// If you actually use wildcards in tlmod.json for mixins, you must expand
 		// them here into a list of explicit strings. For now, we just strip/flag it.
 		System.err.println(
-				"[TLLoader] WARNING: Wildcards in 'mixins' or 'accessWideners' are not fully supported. Use explicit paths.");
+				"[TLModLoader] WARNING: Wildcards in 'mixins' or 'accessWideners' are not fully supported. Use explicit paths.");
 		return path.replace("*", "");
 	}
 }

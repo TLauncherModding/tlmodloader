@@ -169,7 +169,7 @@ public class TLMixinService extends MixinServiceAbstract
 
 	@Override
 	public String getName() {
-		return "TLLoader Service";
+		return "TLModLoader Service";
 	}
 
 	@Override

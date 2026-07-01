@@ -16,7 +16,7 @@ public class TLLaunchWrapper {
 	private static final File CACHE_DIR = new File(".tlmodcache");
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("[TLLoader] Initializing TLauncher Mod Loader...");
+		System.out.println("[TLModLoader] Initializing TLauncher Mod Loader...");
 
 		CACHE_DIR.mkdirs();
 		if (!MODS_DIR.exists()) {
@@ -43,13 +43,13 @@ public class TLLaunchWrapper {
 		}
 
 		// 4. Initialize Mixin & Coremod Pipeline (No Reflection!)
-		System.out.println("[TLLoader] Bootstrapping Mixin environment...");
+		System.out.println("[TLModLoader] Bootstrapping Mixin environment...");
 		TLMixinBootstrap.init();
 
 		// 5. Register Mixin Configs
 		for (ModContainer mod : mods) {
 			for (String mixinConfig : mod.getMixins()) {
-				System.out.println("[TLLoader] Registering Mixin config: " + mixinConfig);
+				System.out.println("[TLModLoader] Registering Mixin config: " + mixinConfig);
 				Mixins.addConfiguration(mixinConfig);
 			}
 		}
@@ -57,14 +57,14 @@ public class TLLaunchWrapper {
 		// 6. Trigger Mod Entrypoints
 		for (ModContainer mod : mods) {
 			for (String entrypoint : mod.getEntrypoints()) {
-				System.out.println("[TLLoader] Invoking mod entrypoint: " + entrypoint);
+				System.out.println("[TLModLoader] Invoking mod entrypoint: " + entrypoint);
 				Class<?> clazz = Class.forName(entrypoint, false, classLoader);
-				Method initMethod = clazz.getDeclaredMethod("onInitialize");
+				Method initMethod = clazz.getDeclaredMethod("init");
 				initMethod.invoke(null);
 			}
 		}
 
-		System.out.println("[TLLoader] Handing control over to TLauncher...");
+		System.out.println("[TLModLoader] Handing control over to TLauncher...");
 
 		// 7. Launch actual TLauncher
 		Class<?> tlauncherClass = Class.forName(TL_MAIN_CLASS, true, classLoader);
@@ -78,7 +78,7 @@ public class TLLaunchWrapper {
 			addMethod.setAccessible(true);
 			addMethod.invoke(classLoader, url);
 		} catch (Exception e) {
-			System.err.println("[TLLoader] Failed to add URL to classpath: " + url);
+			System.err.println("[TLModLoader] Failed to add URL to classpath: " + url);
 		}
 	}
 }

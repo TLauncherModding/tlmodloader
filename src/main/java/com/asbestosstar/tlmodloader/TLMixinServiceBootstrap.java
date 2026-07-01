@@ -7,7 +7,7 @@ public class TLMixinServiceBootstrap implements IMixinServiceBootstrap {
 	@Override
 	public void bootstrap() {
 		// Pre-initialization hook if needed
-		System.out.println("[TLLoader] Mixin service bootstrapping...");
+		System.out.println("[TLModLoader] Mixin service bootstrapping...");
 	}
 
 	@Override
