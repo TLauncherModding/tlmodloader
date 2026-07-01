@@ -357,7 +357,7 @@ build/libs/
 
 ---
 
-# License
+# Licence
 
 This project is released into the Public Domain under **The Unlicense**.
 
