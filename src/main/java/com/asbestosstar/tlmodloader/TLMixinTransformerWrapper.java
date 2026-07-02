@@ -70,4 +70,10 @@ public class TLMixinTransformerWrapper implements IMixinTransformer {
 	public IExtensionRegistry getExtensions() {
 		return delegate.getExtensions();
 	}
+
+	@Override
+	public boolean couldTransformClass(MixinEnvironment environment, String name) {
+		// TODO Auto-generated method stub
+		return true;
+	}
 }

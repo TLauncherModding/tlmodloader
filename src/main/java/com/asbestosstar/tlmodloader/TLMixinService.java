@@ -14,9 +14,11 @@ import org.spongepowered.asm.launch.platform.container.IContainerHandle;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformer;
 import org.spongepowered.asm.mixin.transformer.IMixinTransformerFactory;
+import org.spongepowered.asm.service.IAdviceProvider;
 import org.spongepowered.asm.service.IClassBytecodeProvider;
 import org.spongepowered.asm.service.IClassProvider;
 import org.spongepowered.asm.service.IClassTracker;
+import org.spongepowered.asm.service.IFeatureValidator;
 import org.spongepowered.asm.service.IMixinAuditTrail;
 import org.spongepowered.asm.service.IMixinInternal;
 import org.spongepowered.asm.service.IMixinService;
@@ -236,5 +238,17 @@ public class TLMixinService extends MixinServiceAbstract
 	@Override
 	public MixinEnvironment.CompatibilityLevel getMaxCompatibilityLevel() {
 		return MixinEnvironment.CompatibilityLevel.JAVA_22;
+	}
+
+	@Override
+	public IFeatureValidator getFeatureValidator() {
+		// TODO Auto-generated method stub
+		return IFeatureValidator.ALLOW_ALL;
+	}
+
+	@Override
+	public IAdviceProvider getAdviceProvider() {
+		// TODO Auto-generated method stub
+		return IAdviceProvider.GENERIC;
 	}
 }
