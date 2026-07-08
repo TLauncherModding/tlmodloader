@@ -1,8 +1,8 @@
-// build.gradle
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
-    id 'signing' // Added for GPG signing
+    id 'signing'
+    id 'com.tddworks.central-publisher' version '0.2.0-alpha.1'
 }
 
 version = project.mod_version
@@ -47,20 +47,13 @@ configurations {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
     implementation group: 'tlauncher', name: 'original-TLauncher-2.9369', version: '2.9369'
 
     tlauncherSourceInput group: 'tlauncher', name: 'original-TLauncher-2.9369', version: '2.9369'
     vineflower "org.vineflower:vineflower:1.11.1"
 
-    // Source: https://mvnrepository.com/artifact/net.fabricmc/sponge-mixin
     implementation("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
-
-    // Normal deps, not bundled/shaded.
-    // Source: https://mvnrepository.com/artifact/com.github.LlamaLad7/MixinExtras
     implementation("com.github.LlamaLad7:MixinExtras:0.2.2")
-
-    // Source: https://mvnrepository.com/artifact/net.fabricmc/access-widener
     implementation("net.fabricmc:access-widener:2.1.0")
 
     // TLauncher Dependencies
@@ -165,82 +158,49 @@ dependencies {
     compileOnly group: 'dependencies', name: 'xz-1.9', version: '2.9369'
 }
 
-
-
 jar {
     from sourceSets.main.output
-
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
     manifest {
-        attributes(
-                'Main-Class': 'com.asbestosstar.tlmodloader.installer.TLModLoaderInstaller'
-        )
+        attributes('Main-Class': 'com.asbestosstar.tlmodloader.installer.TLModLoaderInstaller')
     }
-    
-   exclude 'javafx/**'
-
+    exclude 'javafx/**'
 }
 
 processResources {
     inputs.property "version", project.version
-    filesMatching("*.json") {
-        expand "version": project.version
-    }
+    filesMatching("*.json") { expand "version": project.version }
 }
 
 tasks.withType(JavaCompile).configureEach {
     it.options.release = 17
 }
 
-
 tasks.register("decompileTLauncherSources", JavaExec) {
     group = "fabric"
     description = "Decompiles original TLauncher jar with Vineflower."
-
-    def m2Dir = new File(
-            System.getProperty("user.home"),
-            ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369"
-    )
-
+    def m2Dir = new File(System.getProperty("user.home"), ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369")
     def sourcesJar = new File(m2Dir, "original-TLauncher-2.9369-2.9369-sources.jar")
-
     classpath = configurations.vineflower
     mainClass.set("org.jetbrains.java.decompiler.main.decompiler.ConsoleDecompiler")
-
     doFirst {
         m2Dir.mkdirs()
-
         def inputJar = configurations.tlauncherSourceInput.singleFile
-
-        args(
-                "-dgs=1",
-                "-asc=1",
-                "-rsy=1",
-                inputJar.absolutePath,
-                sourcesJar.absolutePath
-        )
+        args("-dgs=1", "-asc=1", "-rsy=1", inputJar.absolutePath, sourcesJar.absolutePath)
     }
 }
+
 tasks.register("installTLauncherJarToMavenLocal") {
     group = "fabric"
-
     doLast {
-        def m2Dir = new File(
-                System.getProperty("user.home"),
-                ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369"
-        )
-
+        def m2Dir = new File(System.getProperty("user.home"), ".m2/repository/tlauncher/original-TLauncher-2.9369/2.9369")
         def inputJar = configurations.tlauncherSourceInput.singleFile
-
         m2Dir.mkdirs()
-
         copy {
             from inputJar
             into m2Dir
             rename { "original-TLauncher-2.9369-2.9369.jar" }
         }
-
         new File(m2Dir, "original-TLauncher-2.9369-2.9369.pom").text = """<project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>tlauncher</groupId>
@@ -260,13 +220,10 @@ tasks.register("installTLauncherToMavenLocal") {
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
-    // Automatically generates and includes -sources.jar
     withSourcesJar()
-    // Automatically generates and includes -javadoc.jar
     withJavadocJar()
 }
 
-// Equivalent to maven-javadoc-plugin configuration (failOnError=false, -Xdoclint:none)
 tasks.withType(Javadoc).configureEach {
     options.addStringOption('Xdoclint:none', '-quiet')
     failOnError = false
@@ -276,20 +233,17 @@ publishing {
     publications {
         create("mavenJava", MavenPublication) {
             from components.java
-
             pom {
-                name = 'TLModLoader' // Update to your project's actual name
-                description = 'TLauncher ModLoader description' // Update to your project's description
-                url = 'https://github.com/Asbestosstar/tlmodloader' // Update to your project's URL
-
+                name = 'TLModLoader'
+                description = 'TLauncher ModLoader description'
+                url = 'https://github.com/Asbestosstar/tlmodloader'
                 licenses {
                     license {
-                        name = 'GNU Lesser General Public License v2.1'
-                        url = 'https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html'
+                        name = 'The Unlicense'
+                        url = 'https://unlicense.org/'
                         distribution = 'repo'
                     }
                 }
-
                 developers {
                     developer {
                         id = 'asbestosstar'
@@ -297,14 +251,12 @@ publishing {
                         email = 'asbestosstar@asbestosstar.com'
                     }
                 }
-
                 scm {
                     connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
                     developerConnection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
                     url = 'https://github.com/Asbestosstar/tlmodloader'
                     tag = 'HEAD'
                 }
-
                 issueManagement {
                     system = 'GitHub'
                     url = 'https://github.com/Asbestosstar/tlmodloader/issues'
@@ -312,29 +264,52 @@ publishing {
             }
         }
     }
-
-    repositories {
-        maven {
-            name = "central"
-            url = "https://central.sonatype.com/api/v1/publisher/upload"
-            credentials(PasswordCredentials) {
-                // Reads from ~/.gradle/gradle.properties
-                username = project.findProperty("centralPortalUsername") ?: System.getenv("CENTRAL_PORTAL_USERNAME")
-                password = project.findProperty("centralPortalPassword") ?: System.getenv("CENTRAL_PORTAL_PASSWORD")
-            }
-        }
-    }
 }
 
-// Equivalent to maven-gpg-plugin
+// Keep standard signing so it uses your GPG agent exactly like Maven
 signing {
-    // Allows skipping signing with -Pdev (equivalent to your Maven dev profile)
     def isDev = project.hasProperty('dev') || System.getenv("GPG_SKIP") == "true"
-    
     if (!isDev) {
-        // This tells Gradle to use the system 'gpg' command and your ~/.gnupg keyring
-        // exactly like your Maven settings.xml <gpg.executable>gpg</gpg.executable> does
         useGpgCmd()
         sign publishing.publications.mavenJava
     }
 }
+
+// TDDWorks Configuration
+// TDDWorks Configuration (Groovy syntax fix)
+centralPublisher {
+    credentials {
+        it.username = project.findProperty("centralPortalUsername")?.toString() ?: ""
+        it.password = project.findProperty("centralPortalPassword")?.toString() ?: ""
+    }
+    
+    projectInfo {
+        it.name = 'TLModLoader'
+        it.description = 'TLauncher ModLoader description'
+        it.url = 'https://github.com/Asbestosstar/tlmodloader'
+        
+        it.license {
+            it.name = 'GNU Lesser General Public License v2.1'
+            it.url = 'https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html'
+        }
+        
+        it.developer {
+            it.id = 'asbestosstar'
+            it.name = 'AsbestosStar'
+            it.email = 'asbestosstar@asbestosstar.com'
+        }
+        
+        it.scm {
+            it.url = 'https://github.com/Asbestosstar/tlmodloader'
+            it.connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
+            it.developerConnection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
+        }
+    }
+    
+    it.publishing {
+        it.autoPublish = false
+        it.aggregation = true
+    }
+}
+    
+    
