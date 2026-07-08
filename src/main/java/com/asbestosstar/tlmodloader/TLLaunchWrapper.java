@@ -16,7 +16,7 @@ public class TLLaunchWrapper {
 	private static final File CACHE_DIR = new File(".tlmodcache");
 
 	public static void main(String[] args) throws Exception {
-		System.out.println("[TLModLoader] Initializing TLauncher Mod Loader...");
+		System.out.println("[TLModLoader] Initialising TLauncher Mod Loader...");
 
 		CACHE_DIR.mkdirs();
 		if (!MODS_DIR.exists()) {
@@ -26,13 +26,20 @@ public class TLLaunchWrapper {
 		// 1. Discover mods
 		List<ModContainer> mods = ModDiscoverer.discoverMods(MODS_DIR);
 
-		// 2. Add all classpaths
-		URLClassLoader classLoader = (URLClassLoader) TLLaunchWrapper.class.getClassLoader();
+		// 2. Add mod classpaths to the SYSTEM classloader directly
+		// We CANNOT use a custom URLClassLoader here because it creates a new "unnamed
+		// module",
+		// which breaks JavaFX and other libraries that rely on
+		// --add-opens=...=ALL-UNNAMED JVM args.
+		ClassLoader sysClassLoader = ClassLoader.getSystemClassLoader();
+
 		for (ModContainer mod : mods) {
 			for (URL url : mod.getAllClasspathUrls()) {
-				addUrl(classLoader, url);
+				addUrlToSystemClassLoader(sysClassLoader, url);
 			}
 		}
+
+		System.out.println("[TLModLoader] Mod classpaths injected into system classloader.");
 
 		// 3. Prepare Access Wideners and Coremods
 		for (ModContainer mod : mods) {
@@ -42,7 +49,7 @@ public class TLLaunchWrapper {
 			}
 		}
 
-		// 4. Initialize Mixin & Coremod Pipeline (No Reflection!)
+		// 4. Initialize Mixin environment
 		System.out.println("[TLModLoader] Bootstrapping Mixin environment...");
 		TLMixinBootstrap.init();
 
@@ -58,7 +65,7 @@ public class TLLaunchWrapper {
 		for (ModContainer mod : mods) {
 			for (String entrypoint : mod.getEntrypoints()) {
 				System.out.println("[TLModLoader] Invoking mod entrypoint: " + entrypoint);
-				Class<?> clazz = Class.forName(entrypoint, false, classLoader);
+				Class<?> clazz = Class.forName(entrypoint, false, sysClassLoader);
 				Method initMethod = clazz.getDeclaredMethod("init");
 				initMethod.invoke(null);
 			}
@@ -66,19 +73,41 @@ public class TLLaunchWrapper {
 
 		System.out.println("[TLModLoader] Handing control over to TLauncher...");
 
-		// 7. Launch actual TLauncher
-		Class<?> tlauncherClass = Class.forName(TL_MAIN_CLASS, true, classLoader);
-		Method mainMethod = tlauncherClass.getDeclaredMethod("main", String[].class);
+		// 7. Launch actual TLauncher using the system class loader
+		Class<?> tlauncherClass = Class.forName(TL_MAIN_CLASS, true, sysClassLoader);
+		Method mainMethod = tlauncherClass.getMethod("main", String[].class);
 		mainMethod.invoke(null, (Object) args);
 	}
 
-	private static void addUrl(URLClassLoader classLoader, URL url) {
+	/**
+	 * Uses reflection to invoke
+	 * AppClassLoader.appendToClassPathForInstrumentation(URL) This is the standard
+	 * Java 9+ workaround to add jars to the system classpath at runtime.
+	 */
+	private static void addUrlToSystemClassLoader(ClassLoader classLoader, URL url) {
 		try {
-			Method addMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+			// Java 9+ AppClassLoader method
+			Method addMethod = classLoader.getClass().getDeclaredMethod("appendToClassPathForInstrumentation",
+					URL.class);
 			addMethod.setAccessible(true);
 			addMethod.invoke(classLoader, url);
+		} catch (NoSuchMethodException e) {
+			// Fallback for Java 8 or if running in an IDE
+			try {
+				if (classLoader instanceof URLClassLoader) {
+					Method addMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+					addMethod.setAccessible(true);
+					addMethod.invoke(classLoader, url);
+				} else {
+					System.err.println("[TLModLoader] Cannot add URL to classpath (Unsupported ClassLoader): " + url);
+				}
+			} catch (Exception ex) {
+				System.err.println("[TLModLoader] Failed to add URL to classpath: " + url);
+				ex.printStackTrace();
+			}
 		} catch (Exception e) {
 			System.err.println("[TLModLoader] Failed to add URL to classpath: " + url);
+			e.printStackTrace();
 		}
 	}
 }
