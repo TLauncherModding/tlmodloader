@@ -233,17 +233,24 @@ publishing {
     publications {
         create("mavenJava", MavenPublication) {
             from components.java
+
+            groupId = project.maven_group
+            artifactId = "tlmodloader"
+            version = project.mod_version
+
             pom {
                 name = 'TLModLoader'
                 description = 'TLauncher ModLoader description'
                 url = 'https://github.com/Asbestosstar/tlmodloader'
+
                 licenses {
                     license {
-                        name = 'The Unlicense'
+    			name = 'The Unlicense'
                         url = 'https://unlicense.org/'
                         distribution = 'repo'
                     }
                 }
+
                 developers {
                     developer {
                         id = 'asbestosstar'
@@ -251,12 +258,14 @@ publishing {
                         email = 'asbestosstar@asbestosstar.com'
                     }
                 }
+
                 scm {
                     connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
                     developerConnection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
                     url = 'https://github.com/Asbestosstar/tlmodloader'
                     tag = 'HEAD'
                 }
+
                 issueManagement {
                     system = 'GitHub'
                     url = 'https://github.com/Asbestosstar/tlmodloader/issues'
@@ -266,50 +275,19 @@ publishing {
     }
 }
 
-// Keep standard signing so it uses your GPG agent exactly like Maven
 signing {
-    def isDev = project.hasProperty('dev') || System.getenv("GPG_SKIP") == "true"
-    if (!isDev) {
-        useGpgCmd()
-        sign publishing.publications.mavenJava
-    }
+    useGpgCmd()
+    sign publishing.publications.mavenJava
 }
 
-// TDDWorks Configuration
-// TDDWorks Configuration (Groovy syntax fix)
 centralPublisher {
     credentials {
-        it.username = project.findProperty("centralPortalUsername")?.toString() ?: ""
-        it.password = project.findProperty("centralPortalPassword")?.toString() ?: ""
+        username = project.findProperty("centralPortalUsername")?.toString() ?: ""
+        password = project.findProperty("centralPortalPassword")?.toString() ?: ""
     }
-    
-    projectInfo {
-        it.name = 'TLModLoader'
-        it.description = 'TLauncher ModLoader description'
-        it.url = 'https://github.com/Asbestosstar/tlmodloader'
-        
-        it.license {
-            it.name = 'GNU Lesser General Public License v2.1'
-            it.url = 'https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html'
-        }
-        
-        it.developer {
-            it.id = 'asbestosstar'
-            it.name = 'AsbestosStar'
-            it.email = 'asbestosstar@asbestosstar.com'
-        }
-        
-        it.scm {
-            it.url = 'https://github.com/Asbestosstar/tlmodloader'
-            it.connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
-            it.developerConnection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
-        }
-    }
-    
-    it.publishing {
-        it.autoPublish = true
-        it.aggregation = true
+
+    publishing {
+        autoPublish = true
+        aggregation = true
     }
 }
-    
-    
