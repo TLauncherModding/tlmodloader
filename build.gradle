@@ -245,7 +245,7 @@ publishing {
 
                 licenses {
                     license {
-    			name = 'The Unlicense'
+                        name = 'The Unlicense'
                         url = 'https://unlicense.org/'
                         distribution = 'repo'
                     }
@@ -256,23 +256,24 @@ publishing {
                         id = 'asbestosstar'
                         name = 'AsbestosStar'
                         email = 'asbestosstar@asbestosstar.com'
+                        organization = 'AsbestosStar'
+                        organizationUrl = 'https://asbestosstar.com'
                     }
                 }
 
                 scm {
                     connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
-                    developerConnection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
+                    developerConnection = 'scm:git:ssh://git@github.com:Asbestosstar/tlmodloader.git'
                     url = 'https://github.com/Asbestosstar/tlmodloader'
                     tag = 'HEAD'
-                }
-
-                issueManagement {
-                    system = 'GitHub'
-                    url = 'https://github.com/Asbestosstar/tlmodloader/issues'
                 }
             }
         }
     }
+}
+
+tasks.withType(Sign).configureEach {
+    dependsOn tasks.withType(GenerateMavenPom)
 }
 
 signing {
@@ -286,7 +287,30 @@ centralPublisher {
         it.password = project.findProperty("centralPortalPassword")?.toString() ?: ""
     }
 
-    publishing {
+    it.projectInfo {
+        it.name = 'TLModLoader'
+        it.description = 'TLauncher ModLoader description'
+        it.url = 'https://github.com/Asbestosstar/tlmodloader'
+
+        it.license {
+            it.name = 'The Unlicense'
+            it.url = 'https://unlicense.org/'
+        }
+
+        it.developer {
+            it.id = 'asbestosstar'
+            it.name = 'AsbestosStar'
+            it.email = 'asbestosstar@asbestosstar.com'
+        }
+
+        it.scm {
+            it.url = 'https://github.com/Asbestosstar/tlmodloader'
+            it.connection = 'scm:git:https://github.com/Asbestosstar/tlmodloader.git'
+            it.developerConnection = 'scm:git:ssh://git@github.com:Asbestosstar/tlmodloader.git'
+        }
+    }
+
+    it.publishing {
         it.autoPublish = true
         it.aggregation = true
     }
