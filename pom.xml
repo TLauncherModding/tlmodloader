@@ -38,9 +38,34 @@
         <tag>HEAD</tag>
     </scm>
 
-    <build>
+      <build>
+        <!-- Force Maven to ignore the src folder entirely by pointing to a non-existent directory -->
+        <sourceDirectory>src/main/java/ignore</sourceDirectory>
+        
         <plugins>
+            <!-- Explicitly set Java 17 and skip compilation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <skip>true</skip>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+
+            <!-- Skip Maven's default jar packaging to prevent overwriting with an empty jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <skipIfEmpty>true</skipIfEmpty>
+                </configuration>
+            </plugin>
+
             <!-- Attach the Gradle-built jar -->
+             <!-- Attach the Gradle-built jar -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -57,6 +82,8 @@
                                 <artifact>
                                     <file>build/libs/tlmodloader-1.0.0.jar</file>
                                     <type>jar</type>
+                                    <!-- Added classifier to prevent ID conflict with the POM -->
+                                    <classifier>all</classifier> 
                                 </artifact>
                                 <artifact>
                                     <file>build/libs/tlmodloader-1.0.0-sources.jar</file>
@@ -106,6 +133,7 @@
                     <publishingServerId>central</publishingServerId>
                     <autoPublish>true</autoPublish>
                     <waitUntil>published</waitUntil>
+                    <skipDefaultDeploy>true</skipDefaultDeploy>
                 </configuration>
             </plugin>
         </plugins>
