@@ -307,7 +307,7 @@ centralPublisher {
     }
     
     it.publishing {
-        it.autoPublish = false
+        it.autoPublish = true
         it.aggregation = true
     }
 }
