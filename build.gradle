@@ -282,12 +282,12 @@ signing {
 
 centralPublisher {
     credentials {
-        username = project.findProperty("centralPortalUsername")?.toString() ?: ""
-        password = project.findProperty("centralPortalPassword")?.toString() ?: ""
+        it.username = project.findProperty("centralPortalUsername")?.toString() ?: ""
+        it.password = project.findProperty("centralPortalPassword")?.toString() ?: ""
     }
 
     publishing {
-        autoPublish = true
-        aggregation = true
+        it.autoPublish = true
+        it.aggregation = true
     }
 }
